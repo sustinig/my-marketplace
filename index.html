@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>My Marketplace</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ==============================
+         NAVIGATION
+         ============================== -->
+
+    <nav class="navbar">
+
+        <h1>🛍️ My Marketplace</h1>
+
+        <div class="nav-links">
+
+            <a href="index.html">
+                🏠 Home
+            </a>
+
+            <a href="favorites.html">
+                ❤️ Favorites
+                <span id="favoritesCount">0</span>
+            </a>
+
+            <a href="cart.html">
+                🛒 Cart
+                <span id="cartCount">0</span>
+            </a>
+
+            <a href="order-history.html">
+                📦 Orders
+            </a>
+
+            <a href="login.html">
+                👤 Login
+            </a>
+
+            <a href="sell.html">
+                ➕ Sell
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <!-- ==============================
+         MARKETPLACE TITLE
+         ============================== -->
+
+    <h1>🛍️ Marketplace</h1>
+
+
+    <!-- ==============================
+         SEARCH
+         ============================== -->
+
+    <div class="search-box">
+
+        <input
+            id="searchInput"
+            type="text"
+            placeholder="Search for products..."
+        >
+
+        <button
+            type="button"
+            onclick="searchProducts()"
+        >
+            🔍 Search
+        </button>
+
+    </div>
+
+
+    <!-- ==============================
+         FILTERS
+         ============================== -->
+
+    <div class="filters">
+
+        <select
+            id="categoryFilter"
+            onchange="filterByCategory()"
+        >
+
+            <option value="">
+                All Categories
+            </option>
+
+            <option value="Clothing">
+                👕 Clothing
+            </option>
+
+            <option value="Shoes">
+                👟 Shoes
+            </option>
+
+            <option value="Electronics">
+                📱 Electronics
+            </option>
+
+            <option value="Games">
+                🎮 Games
+            </option>
+
+            <option value="Books">
+                📚 Books
+            </option>
+
+            <option value="Other">
+                📦 Other
+            </option>
+
+        </select>
+
+
+        <select
+            id="sortProducts"
+            onchange="sortProducts()"
+        >
+
+            <option value="">
+                Sort Products
+            </option>
+
+            <option value="newest">
+                🆕 Newest
+            </option>
+
+            <option value="priceLow">
+                💰 Price: Low → High
+            </option>
+
+            <option value="priceHigh">
+                💸 Price: High → Low
+            </option>
+
+            <option value="nameAZ">
+                🔤 Name: A → Z
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <!-- ==============================
+         SEARCH RESULTS
+         ============================== -->
+
+    <div id="searchResults"></div>
+
+
+    <!-- ==============================
+         PRODUCTS
+         ============================== -->
+
+    <div id="newProduct"></div>
+
+
+    <!-- ==============================
+         FOOTER
+         ============================== -->
+
+    <footer class="footer">
+
+        <p>🛍️ My Marketplace</p>
+
+        <p>
+            Buy • Sell • Discover
+        </p>
+
+        <p>
+            © 2026 My Marketplace
+        </p>
+
+    </footer>
+
+
+    <!-- JAVASCRIPT -->
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

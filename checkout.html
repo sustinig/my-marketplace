@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Checkout - My Marketplace</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+
+    <!-- NAVIGATION -->
+
+    <nav class="navbar">
+
+        <h1>🛍️ My Marketplace</h1>
+
+        <div class="nav-links">
+
+            <a href="index.html">🏠 Home</a>
+
+            <a href="favorites.html">❤️ Favorites</a>
+
+            <a href="cart.html">🛒 Cart</a>
+
+            <a href="order-history.html">📦 Orders</a>
+
+            <a href="login.html">👤 Login</a>
+
+            <a href="sell.html">➕ Sell</a>
+
+        </div>
+
+    </nav>
+
+
+    <!-- CHECKOUT -->
+
+    <h1>💳 Checkout</h1>
+
+
+    <!-- PRODUCTS -->
+
+    <div
+        id="checkoutItems"
+        class="products"
+    ></div>
+
+
+    <!-- ORDER TOTAL -->
+
+    <h2 id="checkoutTotal">
+        Order Total: $0
+    </h2>
+
+
+    <!-- CUSTOMER INFORMATION -->
+
+    <div class="product">
+
+        <h2>Customer Information</h2>
+
+
+        <input
+            id="customerName"
+            type="text"
+            placeholder="Your name"
+        >
+
+        <br><br>
+
+
+        <input
+            id="customerEmail"
+            type="email"
+            placeholder="Your email"
+        >
+
+        <br><br>
+
+
+        <!-- SHIPPING -->
+
+        <h2>🚚 Shipping Method</h2>
+
+
+        <select
+            id="shippingMethod"
+            onchange="updateCheckoutTotal()"
+        >
+
+            <option value="0">
+                🆓 Free Pickup - $0
+            </option>
+
+            <option value="5">
+                🚚 Standard Shipping - $5
+            </option>
+
+            <option value="10">
+                ⚡ Express Shipping - $10
+            </option>
+
+        </select>
+
+
+        <br><br>
+
+
+        <!-- PLACE ORDER -->
+
+        <button
+            type="button"
+            onclick="placeOrder()"
+        >
+            Place Order
+        </button>
+
+    </div>
+
+
+    <br>
+
+
+    <!-- BACK TO CART -->
+
+    <a href="cart.html">
+
+        <button type="button">
+            Back to Cart
+        </button>
+
+    </a>
+
+
+    <!-- FOOTER -->
+
+    <footer class="footer">
+
+        <p>🛍️ My Marketplace</p>
+
+        <p>
+            Buy • Sell • Discover
+        </p>
+
+        <p>
+            © 2026 My Marketplace
+        </p>
+
+    </footer>
+
+
+    <!-- JAVASCRIPT -->
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

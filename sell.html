@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Sell an Item - My Marketplace</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <h1>🛍️ My Marketplace</h1>
+
+        <div class="nav-links">
+
+            <a href="index.html">
+                🏠 Home
+            </a>
+
+            <a href="favorites.html">
+                ❤️ Favorites
+                <span id="favoritesCount">0</span>
+            </a>
+
+            <a href="cart.html">
+                🛒 Cart
+                <span id="cartCount">0</span>
+            </a>
+
+            <a href="order-history.html">
+                📦 Orders
+            </a>
+
+            <a href="login.html">
+                👤 Login
+            </a>
+
+            <a href="sell.html">
+                ➕ Sell
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <h1>➕ Sell an Item</h1>
+
+
+    <div class="product">
+
+        <h2>Post Your Product</h2>
+
+
+        <!-- PRODUCT NAME -->
+
+        <label for="productName">
+            Product Name
+        </label>
+
+        <br>
+
+        <input
+            id="productName"
+            type="text"
+            placeholder="Enter product name"
+        >
+
+
+        <br>
+        <br>
+
+
+        <!-- PRICE -->
+
+        <label for="productPrice">
+            Price
+        </label>
+
+        <br>
+
+        <input
+            id="productPrice"
+            type="number"
+            placeholder="Enter price"
+            min="0"
+            step="0.01"
+        >
+
+
+        <br>
+        <br>
+
+
+        <!-- CATEGORY -->
+
+        <label for="productCategory">
+            Category
+        </label>
+
+        <br>
+
+        <select id="productCategory">
+
+            <option value="Clothing">
+                👕 Clothing
+            </option>
+
+            <option value="Shoes">
+                👟 Shoes
+            </option>
+
+            <option value="Electronics">
+                📱 Electronics
+            </option>
+
+            <option value="Games">
+                🎮 Games
+            </option>
+
+            <option value="Books">
+                📚 Books
+            </option>
+
+            <option value="Other">
+                📦 Other
+            </option>
+
+        </select>
+
+
+        <br>
+        <br>
+
+
+        <!-- DESCRIPTION -->
+
+        <label for="productDescription">
+            Description
+        </label>
+
+        <br>
+
+        <textarea
+            id="productDescription"
+            placeholder="Describe your product"
+            rows="5"
+        ></textarea>
+
+
+        <br>
+        <br>
+
+
+        <!-- IMAGE -->
+
+        <label for="productImage">
+            Product Image
+        </label>
+
+        <br>
+
+        <input
+            id="productImage"
+            type="file"
+            accept="image/*"
+        >
+
+
+        <br>
+        <br>
+
+
+        <!-- POST BUTTON -->
+
+        <button
+            id="postButton"
+            type="button"
+        >
+            🚀 Post Item
+        </button>
+
+    </div>
+
+
+    <br>
+
+
+    <a href="index.html">
+        <button type="button">
+            🏠 Back to Marketplace
+        </button>
+    </a>
+
+
+    <footer class="footer">
+
+        <p>
+            🛍️ My Marketplace
+        </p>
+
+        <p>
+            Buy • Sell • Discover
+        </p>
+
+        <p>
+            © 2026 My Marketplace
+        </p>
+
+    </footer>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>

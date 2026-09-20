@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - My Marketplace</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- NAVIGATION BAR -->
+    <nav class="navbar">
+
+        <h1>🛍️ My Marketplace</h1>
+
+        <div class="nav-links">
+            <a href="index.html">🏠 Home</a>
+            <a href="favorites.html">❤️ Favorites</a>
+            <a href="cart.html">🛒 Cart</a>
+            <a href="order-history.html">📦 Orders</a>
+            <a href="login.html">👤 Login</a>
+            <a href="sell.html">➕ Sell</a>
+        </div>
+
+    </nav>
+
+    <h1>👤 My Account</h1>
+
+    <div class="product">
+
+        <h2>Login</h2>
+
+        <input
+            id="loginEmail"
+            type="email"
+            placeholder="Enter your email"
+        >
+
+        <br><br>
+
+        <input
+            id="loginPassword"
+            type="password"
+            placeholder="Enter your password"
+        >
+
+        <br><br>
+
+        <button type="button" onclick="loginUser()">
+            Login
+        </button>
+
+        <h2>Create Account</h2>
+
+        <input
+            id="signupName"
+            type="text"
+            placeholder="Enter your name"
+        >
+
+        <br><br>
+
+        <input
+            id="signupEmail"
+            type="email"
+            placeholder="Enter your email"
+        >
+
+        <br><br>
+
+        <input
+            id="signupPassword"
+            type="password"
+            placeholder="Create a password"
+        >
+
+        <br><br>
+
+        <button type="button" onclick="createAccount()">
+            Create Account
+        </button>
+
+    </div>
+
+    <footer class="footer">
+        <p>🛍️ My Marketplace</p>
+        <p>Buy • Sell • Discover</p>
+        <p>© 2026 My Marketplace</p>
+    </footer>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
