@@ -1,35 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Running Shoes - My Marketplace</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Product - My Marketplace</title>
+
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js" defer></script>
 </head>
 
 <body>
 
-    <h1>Running Shoes</h1>
+    <nav class="navbar">
+        <h1>🛍️ My Marketplace</h1>
 
-    <div class="product">
-        <img src="shoes.jpg" alt="Running Shoes">
+        <div class="nav-links">
+            <a href="index.html">🏠 Home</a>
+            <a href="favorites.html">❤️ Favorites <span id="favoritesCount">0</span></a>
+            <a href="cart.html">🛒 Cart <span id="cartCount">0</span></a>
+            <a href="order-history.html">📦 Orders</a>
+            <a href="login.html">👤 Login</a>
+            <a href="sell.html">➕ Sell</a>
+        </div>
+    </nav>
 
-        <h2>Running Shoes</h2>
+    <main>
 
-        <p>Price: $50</p>
+        <div id="productDetails">
+            <p>Loading product...</p>
+        </div>
 
-        <p>
+    </main>
 
-            Comfortable running shoes that are great for
-            everyday use and exercise.
-        </p>
-
-        <button onclick="alert('Thank you for your purchase!')">Buy Now</button>
-
-        <br><br>
-
-        <a href="index.html">Back to Marketplace</a>
-
-    </div>
+    <footer class="footer">
+        <p>&copy; 2026 My Marketplace</p>
+    </footer>
 
 </body>
 

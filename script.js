@@ -1,329 +1,209 @@
-// ==============================
-// PRODUCTS
-// ==============================
+// ======================================================
+// SUPABASE SETUP
+// ======================================================
 
-let products =
-    JSON.parse(localStorage.getItem("products")) || [];
+const SUPABASE_URL = "https://aanpcyrquzllvqjmcbzw.supabase.co";
+
+const SUPABASE_KEY = "sb_publishable_pH9T1TtZ5Jx8RmGvzqWhJg_huBuXipE";
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
 
-// ==============================
-// POST PRODUCT
-// ==============================
+// ======================================================
+// GLOBAL VARIABLES
+// ======================================================
 
-function postItem() {
+let allProducts = [];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 
-    const nameInput =
-        document.getElementById("productName");
 
-    const priceInput =
-        document.getElementById("productPrice");
+// ======================================================
+// LOAD PRODUCTS FROM SUPABASE
+// ======================================================
 
-    const categoryInput =
-        document.getElementById("productCategory");
+async function loadProducts() {
 
-    const descriptionInput =
-        document.getElementById("productDescription");
+    const { data: products, error } = await supabaseClient
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    const imageInput =
-        document.getElementById("productImage");
-
-    if (
-        !nameInput ||
-        !priceInput ||
-        !categoryInput ||
-        !descriptionInput ||
-        !imageInput
-    ) {
+    if (error) {
+        console.error("Products loading error:", error);
+        allProducts = [];
         return;
     }
 
-    const name =
-        nameInput.value.trim();
+    allProducts = products || [];
 
-    const price =
-        priceInput.value;
+    console.log("Products loaded:", allProducts);
 
-    const category =
-        categoryInput.value;
-
-    const description =
-        descriptionInput.value.trim();
-
-    if (
-        name === "" ||
-        price === "" ||
-        description === ""
-    ) {
-        alert(
-            "Please fill in all product fields."
-        );
-
-        return;
-    }
-
-    const file =
-        imageInput.files[0];
-
-    if (file) {
-
-        const reader =
-            new FileReader();
-
-        reader.onload =
-            function(event) {
-
-                saveProduct(
-                    name,
-                    price,
-                    category,
-                    description,
-                    event.target.result
-                );
-
-            };
-
-        reader.readAsDataURL(file);
-
-    } else {
-
-        saveProduct(
-            name,
-            price,
-            category,
-            description,
-            ""
-        );
-
-    }
+    displayProducts(allProducts);
 }
 
 
-// ==============================
-// SAVE PRODUCT
-// ==============================
+// ======================================================
+// DISPLAY PRODUCTS ON HOMEPAGE
+// ======================================================
 
-function saveProduct(
-    name,
-    price,
-    category,
-    description,
-    image
-) {
+function displayProducts(products = allProducts) {
 
-    const product = {
+    const productList = document.getElementById("product-list");
 
-        id: Date.now(),
-
-        name: name,
-
-        price: Number(price),
-
-        category: category,
-
-        description: description,
-
-        image: image
-
-    };
-
-    products.push(product);
-
-    localStorage.setItem(
-        "products",
-        JSON.stringify(products)
-    );
-
-    alert(
-        "Product posted successfully!"
-    );
-
-    window.location.href =
-        "index.html";
-}
-
-
-// ==============================
-// DISPLAY PRODUCTS
-// ==============================
-
-function displayProducts(productList) {
-
-    const newProduct =
-        document.getElementById(
-            "newProduct"
-        );
-
-    if (!newProduct) {
+    if (!productList) {
         return;
     }
 
-    newProduct.innerHTML = "";
-
-    if (productList.length === 0) {
-
-        newProduct.innerHTML =
-            "<p>No products found.</p>";
-
+    if (!products || products.length === 0) {
+        productList.innerHTML = `
+            <p>No products found.</p>
+        `;
         return;
     }
 
-    productList.forEach(
-        function(product) {
+    productList.innerHTML = products.map(product => {
 
-            newProduct.innerHTML += `
+        const isFavorite = favorites.includes(String(product.id));
 
-                <div class="product">
+        return `
+            <div class="product-card">
 
-                    ${
-                        product.image
-                        ?
-                        `<img
-                            src="${product.image}"
-                            alt="${product.name}"
-                        >`
-                        :
-                        ""
-                    }
+                <img
+                    src="${product.image_url || "https://via.placeholder.com/300"}"
+                    alt="${product.name}"
+                >
 
-                    <h3>
-                        ${product.name}
-                    </h3>
+                <h3>${product.name}</h3>
 
-                    <p class="price">
-                        💰 $${product.price}
-                    </p>
+                <p>
+                    €${Number(product.price).toFixed(2)}
+                </p>
 
-                    <p class="category">
-                        🏷️
-                        ${product.category || "Other"}
-                    </p>
+                <p>
+                    ${product.category || "Other"}
+                </p>
 
-                    <p class="description">
-                        ${product.description}
-                    </p>
+                <div class="product-buttons">
 
-                    <a
-                        href="posted-product.html?id=${product.id}"
-                    >
-                        <button type="button">
-                            👀 View Product
-                        </button>
+                    <a href="product.html?id=${product.id}">
+                        👀 View Product
                     </a>
 
-                    <button
-                        type="button"
-                        onclick="addToCart(${product.id})"
-                    >
+                    <button onclick="addToCart(${product.id})">
                         🛒 Add to Cart
                     </button>
 
-                    <button
-                        type="button"
-                        onclick="addToFavorites(${product.id})"
-                    >
-                        ❤️ Favorite
-                    </button>
-
-                    <button
-                        type="button"
-                        onclick="deleteProduct(${product.id})"
-                    >
-                        🗑️ Delete
+                    <button onclick="toggleFavorite(${product.id})">
+                        ${isFavorite ? "💔 Remove Favorite" : "❤️ Favorite"}
                     </button>
 
                 </div>
 
-            `;
-        }
-    );
+            </div>
+        `;
+
+    }).join("");
 }
 
 
-// ==============================
-// PRODUCT DETAILS
-// ==============================
+// ======================================================
+// PRODUCT DETAILS PAGE
+// ======================================================
 
-function displayProductDetails() {
+async function displayProductDetails() {
 
-    const productDetails =
-        document.getElementById(
-            "productDetails"
-        );
+    const container = document.getElementById("productDetails");
 
-    if (!productDetails) {
+    if (!container) {
         return;
     }
 
-    const params =
-        new URLSearchParams(
-            window.location.search
-        );
+    const params = new URLSearchParams(window.location.search);
 
-    const productId =
-        Number(params.get("id"));
+    const productId = params.get("id");
 
-    const product =
-        products.find(
-            function(product) {
+    console.log("Product ID:", productId);
 
-                return product.id === productId;
+    if (!productId) {
 
-            }
-        );
+        container.innerHTML = `
+            <p>Product not found.</p>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = `
+        <p>Loading product...</p>
+    `;
+
+    const { data: product, error } = await supabaseClient
+        .from("products")
+        .select("*")
+        .eq("id", productId)
+        .single();
+
+    if (error) {
+
+        console.error("Product loading error:", error);
+
+        container.innerHTML = `
+            <p>Product not found.</p>
+        `;
+
+        return;
+    }
 
     if (!product) {
 
-        productDetails.innerHTML =
-            "<p>Product not found.</p>";
+        container.innerHTML = `
+            <p>Product not found.</p>
+        `;
 
         return;
     }
 
-    productDetails.innerHTML = `
+    const isFavorite = favorites.includes(String(product.id));
 
-        <div class="product">
+    container.innerHTML = `
 
-            ${
-                product.image
-                ?
-                `<img
-                    src="${product.image}"
-                    alt="${product.name}"
-                >`
-                :
-                ""
-            }
+        <div class="product-details">
 
-            <h2>
-                ${product.name}
-            </h2>
-
-            <p class="price">
-                💰 $${product.price}
-            </p>
-
-            <p class="category">
-                🏷️
-                ${product.category || "Other"}
-            </p>
-
-            <p class="description">
-                ${product.description}
-            </p>
-
-            <button
-                type="button"
-                onclick="addToCart(${product.id})"
+            <img
+                src="${product.image_url || "https://via.placeholder.com/400"}"
+                alt="${product.name}"
+                class="product-detail-image"
             >
-                🛒 Add to Cart
-            </button>
 
-            <button
-                type="button"
-                onclick="addToFavorites(${product.id})"
-            >
-                ❤️ Add to Favorites
-            </button>
+            <div class="product-info">
+
+                <h2>${product.name}</h2>
+
+                <h3>
+                    €${Number(product.price).toFixed(2)}
+                </h3>
+
+                <p>
+                    <strong>Category:</strong>
+                    ${product.category || "Other"}
+                </p>
+
+                <p>
+                    ${product.description || "No description available."}
+                </p>
+
+                <button onclick="addToCart(${product.id})">
+                    🛒 Add to Cart
+                </button>
+
+                <button onclick="toggleFavorite(${product.id})">
+                    ${isFavorite ? "💔 Remove Favorite" : "❤️ Add to Favorites"}
+                </button>
+
+            </div>
 
         </div>
 
@@ -331,1318 +211,315 @@ function displayProductDetails() {
 }
 
 
-// ==============================
-// DELETE PRODUCT
-// ==============================
-
-function deleteProduct(productId) {
-
-    products =
-        products.filter(
-            function(product) {
-
-                return product.id !== productId;
-
-            }
-        );
-
-    localStorage.setItem(
-        "products",
-        JSON.stringify(products)
-    );
-
-    alert(
-        "Product deleted successfully!"
-    );
-
-    displayProducts(products);
-}
-
-
-// ==============================
+// ======================================================
 // SEARCH
-// ==============================
+// ======================================================
 
 function searchProducts() {
 
-    const searchInput =
-        document.getElementById(
-            "searchInput"
-        );
+    const searchInput = document.getElementById("searchInput");
 
-    const searchResults =
-        document.getElementById(
-            "searchResults"
-        );
-
-    if (
-        !searchInput ||
-        !searchResults
-    ) {
+    if (!searchInput) {
         return;
     }
 
-    const searchText =
-        searchInput.value
-            .trim()
-            .toLowerCase();
+    const searchText = searchInput.value
+        .trim()
+        .toLowerCase();
 
-    const results =
-        products.filter(
-            function(product) {
+    if (!searchText) {
 
-                return (
+        displayProducts(allProducts);
 
-                    product.name
-                        .toLowerCase()
-                        .includes(searchText)
+        return;
+    }
 
-                    ||
+    const filteredProducts = allProducts.filter(product => {
 
-                    product.description
-                        .toLowerCase()
-                        .includes(searchText)
-
-                    ||
-
-                    (product.category || "")
-                        .toLowerCase()
-                        .includes(searchText)
-
-                );
-
-            }
+        return (
+            (product.name || "").toLowerCase().includes(searchText) ||
+            (product.description || "").toLowerCase().includes(searchText) ||
+            (product.category || "").toLowerCase().includes(searchText)
         );
 
-    displaySearchResults(results);
+    });
+
+    displayProducts(filteredProducts);
 }
 
 
-// ==============================
-// DISPLAY SEARCH RESULTS
-// ==============================
-
-function displaySearchResults(results) {
-
-    const searchResults =
-        document.getElementById(
-            "searchResults"
-        );
-
-    if (!searchResults) {
-        return;
-    }
-
-    searchResults.innerHTML = "";
-
-    if (results.length === 0) {
-
-        searchResults.innerHTML =
-            "<p>No products found.</p>";
-
-        return;
-    }
-
-    results.forEach(
-        function(product) {
-
-            searchResults.innerHTML += `
-
-                <div class="product">
-
-                    ${
-                        product.image
-                        ?
-                        `<img
-                            src="${product.image}"
-                            alt="${product.name}"
-                        >`
-                        :
-                        ""
-                    }
-
-                    <h3>
-                        ${product.name}
-                    </h3>
-
-                    <p class="price">
-                        💰 $${product.price}
-                    </p>
-
-                    <p class="category">
-                        🏷️
-                        ${product.category || "Other"}
-                    </p>
-
-                    <p class="description">
-                        ${product.description}
-                    </p>
-
-                    <a
-                        href="posted-product.html?id=${product.id}"
-                    >
-                        <button type="button">
-                            👀 View Product
-                        </button>
-                    </a>
-
-                    <button
-                        type="button"
-                        onclick="addToCart(${product.id})"
-                    >
-                        🛒 Add to Cart
-                    </button>
-
-                    <button
-                        type="button"
-                        onclick="addToFavorites(${product.id})"
-                    >
-                        ❤️ Favorite
-                    </button>
-
-                </div>
-
-            `;
-        }
-    );
-}
-
-
-// ==============================
+// ======================================================
 // CATEGORY FILTER
-// ==============================
+// ======================================================
 
 function filterByCategory() {
 
     const categoryFilter =
-        document.getElementById(
-            "categoryFilter"
-        );
+        document.getElementById("categoryFilter");
 
     if (!categoryFilter) {
         return;
     }
 
-    const category =
-        categoryFilter.value;
+    const category = categoryFilter.value;
 
-    if (category === "") {
+    if (!category) {
 
-        displayProducts(products);
+        displayProducts(allProducts);
 
         return;
     }
 
-    const filteredProducts =
-        products.filter(
-            function(product) {
+    const filteredProducts = allProducts.filter(product => {
 
-                return product.category === category;
+        return product.category === category;
 
-            }
-        );
+    });
 
-    displayProducts(
-        filteredProducts
-    );
+    displayProducts(filteredProducts);
 }
 
 
-// ==============================
+// ======================================================
 // SORT PRODUCTS
-// ==============================
+// ======================================================
 
 function sortProducts() {
 
     const sortSelect =
-        document.getElementById(
-            "sortProducts"
-        );
+        document.getElementById("sortProducts");
 
     if (!sortSelect) {
         return;
     }
 
-    const sortValue =
-        sortSelect.value;
+    const sortValue = sortSelect.value;
 
-    let sortedProducts =
-        [...products];
-
-    if (sortValue === "newest") {
-
-        sortedProducts.sort(
-            function(a, b) {
-
-                return b.id - a.id;
-
-            }
-        );
-    }
+    let products = [...allProducts];
 
     if (sortValue === "priceLow") {
 
-        sortedProducts.sort(
-            function(a, b) {
-
-                return a.price - b.price;
-
-            }
+        products.sort((a, b) =>
+            Number(a.price) - Number(b.price)
         );
+
     }
 
-    if (sortValue === "priceHigh") {
+    else if (sortValue === "priceHigh") {
 
-        sortedProducts.sort(
-            function(a, b) {
-
-                return b.price - a.price;
-
-            }
+        products.sort((a, b) =>
+            Number(b.price) - Number(a.price)
         );
+
     }
 
-    if (sortValue === "nameAZ") {
+    else if (sortValue === "nameAZ") {
 
-        sortedProducts.sort(
-            function(a, b) {
-
-                return a.name.localeCompare(
-                    b.name
-                );
-
-            }
+        products.sort((a, b) =>
+            (a.name || "").localeCompare(b.name || "")
         );
+
     }
 
-    displayProducts(
-        sortedProducts
-    );
+    else if (sortValue === "newest") {
+
+        products.sort((a, b) =>
+            new Date(b.created_at) -
+            new Date(a.created_at)
+        );
+
+    }
+
+    displayProducts(products);
 }
 
 
-// ==============================
+// ======================================================
 // CART
-// ==============================
+// ======================================================
+
+function saveCart() {
+
+    localStorage.setItem(
+        "cart",
+        JSON.stringify(cart)
+    );
+
+    updateCartCount();
+}
+
 
 function addToCart(productId) {
 
-    let cart =
-        JSON.parse(
-            localStorage.getItem("cart")
-        ) || [];
-
-    const product =
-        products.find(
-            function(product) {
-
-                return product.id === productId;
-
-            }
-        );
+    const product = allProducts.find(
+        p => String(p.id) === String(productId)
+    );
 
     if (!product) {
+
+        alert("Product not found.");
+
         return;
     }
 
-    const existingProduct =
-        cart.find(
-            function(item) {
+    const existingItem = cart.find(
+        item => String(item.id) === String(productId)
+    );
 
-                return item.id === productId;
+    if (existingItem) {
 
-            }
-        );
-
-    if (existingProduct) {
-
-        existingProduct.quantity += 1;
+        existingItem.quantity += 1;
 
     } else {
 
         cart.push({
-            ...product,
+            id: product.id,
+            name: product.name,
+            price: Number(product.price),
+            image_url: product.image_url,
             quantity: 1
         });
 
     }
 
-    localStorage.setItem(
-        "cart",
-        JSON.stringify(cart)
-    );
+    saveCart();
 
-    updateCartCount();
-
-    alert(
-        product.name +
-        " added to cart!"
-    );
+    alert("Product added to cart! 🛒");
 }
 
 
-// ==============================
-// DISPLAY CART
-// ==============================
+function removeFromCart(productId) {
 
-function displayCart() {
+    cart = cart.filter(
+        item => String(item.id) !== String(productId)
+    );
 
-    const cartItems =
-        document.getElementById(
-            "cartItems"
-        );
+    saveCart();
 
-    if (!cartItems) {
+    displayCart();
+}
+
+
+function changeCartQuantity(productId, change) {
+
+    const item = cart.find(
+        item => String(item.id) === String(productId)
+    );
+
+    if (!item) {
         return;
     }
 
-    const cart =
-        JSON.parse(
-            localStorage.getItem("cart")
-        ) || [];
+    item.quantity += change;
 
-    let total = 0;
+    if (item.quantity <= 0) {
 
-    cartItems.innerHTML = "";
+        removeFromCart(productId);
 
-    if (cart.length === 0) {
-
-        cartItems.innerHTML =
-            "<p>Your cart is empty.</p>";
+        return;
     }
 
-    cart.forEach(
-        function(product, index) {
-
-            const quantity =
-                product.quantity || 1;
-
-            const itemTotal =
-                Number(product.price) *
-                quantity;
-
-            total += itemTotal;
-
-            cartItems.innerHTML += `
-
-                <div class="product">
-
-                    ${
-                        product.image
-                        ?
-                        `<img
-                            src="${product.image}"
-                            alt="${product.name}"
-                        >`
-                        :
-                        ""
-                    }
-
-                    <h3>
-                        ${product.name}
-                    </h3>
-
-                    <p>
-                        Price:
-                        $${product.price}
-                    </p>
-
-                    <p>
-                        Quantity:
-                        ${quantity}
-                    </p>
-
-                    <p>
-                        Item Total:
-                        $${itemTotal}
-                    </p>
-
-                    <button
-                        type="button"
-                        onclick="decreaseQuantity(${index})"
-                    >
-                        ➖
-                    </button>
-
-                    <button
-                        type="button"
-                        onclick="increaseQuantity(${index})"
-                    >
-                        ➕
-                    </button>
-
-                    <button
-                        type="button"
-                        onclick="removeFromCart(${index})"
-                    >
-                        Remove
-                    </button>
-
-                </div>
-
-            `;
-        }
-    );
-
-    const cartTotal =
-        document.getElementById(
-            "cartTotal"
-        );
-
-    if (cartTotal) {
-
-        cartTotal.textContent =
-            "Total: $" + total;
-
-    }
-
-    updateCartCount();
-}
-
-
-// ==============================
-// INCREASE QUANTITY
-// ==============================
-
-function increaseQuantity(index) {
-
-    let cart =
-        JSON.parse(
-            localStorage.getItem("cart")
-        ) || [];
-
-    cart[index].quantity =
-        (cart[index].quantity || 1) + 1;
-
-    localStorage.setItem(
-        "cart",
-        JSON.stringify(cart)
-    );
+    saveCart();
 
     displayCart();
 }
 
-
-// ==============================
-// DECREASE QUANTITY
-// ==============================
-
-function decreaseQuantity(index) {
-
-    let cart =
-        JSON.parse(
-            localStorage.getItem("cart")
-        ) || [];
-
-    cart[index].quantity =
-        (cart[index].quantity || 1) - 1;
-
-    if (
-        cart[index].quantity <= 0
-    ) {
-
-        cart.splice(index, 1);
-
-    }
-
-    localStorage.setItem(
-        "cart",
-        JSON.stringify(cart)
-    );
-
-    displayCart();
-}
-
-
-// ==============================
-// REMOVE FROM CART
-// ==============================
-
-function removeFromCart(index) {
-
-    let cart =
-        JSON.parse(
-            localStorage.getItem("cart")
-        ) || [];
-
-    cart.splice(index, 1);
-
-    localStorage.setItem(
-        "cart",
-        JSON.stringify(cart)
-    );
-
-    displayCart();
-}
-
-
-// ==============================
-// CART COUNT
-// ==============================
 
 function updateCartCount() {
 
     const cartCount =
-        document.getElementById(
-            "cartCount"
-        );
+        document.getElementById("cartCount");
 
     if (!cartCount) {
         return;
     }
 
-    const cart =
-        JSON.parse(
-            localStorage.getItem("cart")
-        ) || [];
-
-    let count = 0;
-
-    cart.forEach(
-        function(product) {
-
-            count +=
-                product.quantity || 1;
-
-        }
+    const count = cart.reduce(
+        (total, item) =>
+            total + Number(item.quantity || 0),
+        0
     );
 
-    cartCount.textContent =
-        count;
+    cartCount.textContent = count;
 }
 
 
-// ==============================
-// CHECKOUT
-// ==============================
+// ======================================================
+// DISPLAY CART
+// ======================================================
 
-function displayCheckout() {
+function displayCart() {
 
-    const checkoutItems =
-        document.getElementById(
-            "checkoutItems"
-        );
+    const cartContainer =
+        document.getElementById("cartItems");
 
-    if (!checkoutItems) {
+    if (!cartContainer) {
         return;
     }
-
-    const cart =
-        JSON.parse(
-            localStorage.getItem("cart")
-        ) || [];
-
-    let total = 0;
-
-    checkoutItems.innerHTML = "";
 
     if (cart.length === 0) {
 
-        checkoutItems.innerHTML =
-            "<p>Your cart is empty.</p>";
-    }
-
-    cart.forEach(
-        function(product) {
-
-            const quantity =
-                product.quantity || 1;
-
-            const itemTotal =
-                Number(product.price) *
-                quantity;
-
-            total += itemTotal;
-
-            checkoutItems.innerHTML += `
-
-                <div class="product">
-
-                    ${
-                        product.image
-                        ?
-                        `<img
-                            src="${product.image}"
-                            alt="${product.name}"
-                        >`
-                        :
-                        ""
-                    }
-
-                    <h3>
-                        ${product.name}
-                    </h3>
-
-                    <p>
-                        Price per item:
-                        $${product.price}
-                    </p>
-
-                    <p>
-                        Quantity:
-                        ${quantity}
-                    </p>
-
-                    <p>
-                        Item Total:
-                        $${itemTotal}
-                    </p>
-
-                </div>
-
-            `;
-        }
-    );
-
-    const checkoutTotal =
-        document.getElementById(
-            "checkoutTotal"
-        );
-
-    if (checkoutTotal) {
-
-        checkoutTotal.textContent =
-            "Order Total: $" + total;
-
-    }
-
-    updateCheckoutTotal();
-}
-
-
-// ==============================
-// CHECKOUT TOTAL
-// ==============================
-
-function updateCheckoutTotal() {
-
-    const cart =
-        JSON.parse(
-            localStorage.getItem("cart")
-        ) || [];
-
-    let total = 0;
-
-    cart.forEach(
-        function(product) {
-
-            const quantity =
-                product.quantity || 1;
-
-            total +=
-                Number(product.price) *
-                quantity;
-
-        }
-    );
-
-    const shippingMethod =
-        document.getElementById(
-            "shippingMethod"
-        );
-
-    const shippingCost =
-        shippingMethod
-        ?
-        Number(shippingMethod.value)
-        :
-        0;
-
-    total += shippingCost;
-
-    const checkoutTotal =
-        document.getElementById(
-            "checkoutTotal"
-        );
-
-    if (checkoutTotal) {
-
-        checkoutTotal.textContent =
-            "Order Total: $" + total;
-
-    }
-}
-
-
-// ==============================
-// PLACE ORDER
-// ==============================
-
-function placeOrder() {
-
-    const nameInput =
-        document.getElementById(
-            "customerName"
-        );
-
-    const emailInput =
-        document.getElementById(
-            "customerEmail"
-        );
-
-    const shippingMethod =
-        document.getElementById(
-            "shippingMethod"
-        );
-
-    if (
-        !nameInput ||
-        !emailInput ||
-        !shippingMethod
-    ) {
-        return;
-    }
-
-    const name =
-        nameInput.value.trim();
-
-    const email =
-        emailInput.value.trim();
-
-    if (
-        name === "" ||
-        email === ""
-    ) {
-
-        alert(
-            "Please enter your name and email."
-        );
+        cartContainer.innerHTML = `
+            <p>Your cart is empty.</p>
+        `;
 
         return;
     }
 
-    const cart =
-        JSON.parse(
-            localStorage.getItem("cart")
-        ) || [];
+    cartContainer.innerHTML = cart.map(item => {
 
-    if (cart.length === 0) {
+        return `
+            <div class="cart-item">
 
-        alert(
-            "Your cart is empty."
-        );
+                <img
+                    src="${item.image_url || "https://via.placeholder.com/150"}"
+                    alt="${item.name}"
+                >
 
-        return;
-    }
+                <div>
 
-    const shippingCost =
-        Number(
-            shippingMethod.value
-        );
-
-    const shippingText =
-        shippingMethod.options[
-            shippingMethod.selectedIndex
-        ].text;
-
-    let total = 0;
-
-    cart.forEach(
-        function(product) {
-
-            const quantity =
-                product.quantity || 1;
-
-            total +=
-                Number(product.price) *
-                quantity;
-
-        }
-    );
-
-    total += shippingCost;
-
-    const order = {
-
-        id: Date.now(),
-
-        name: name,
-
-        email: email,
-
-        products: cart,
-
-        shippingMethod:
-            shippingText,
-
-        shippingCost:
-            shippingCost,
-
-        total: total,
-
-        date:
-            new Date()
-                .toLocaleDateString(),
-
-        time:
-            new Date()
-                .toLocaleTimeString(),
-
-        status:
-            "Order Placed"
-
-    };
-
-    localStorage.setItem(
-        "lastOrder",
-        JSON.stringify(order)
-    );
-
-    let orders =
-        JSON.parse(
-            localStorage.getItem("orders")
-        ) || [];
-
-    orders.push(order);
-
-    localStorage.setItem(
-        "orders",
-        JSON.stringify(orders)
-    );
-
-    localStorage.removeItem(
-        "cart"
-    );
-
-    alert(
-        "Order placed successfully! Thank you, "
-        + name
-        + "!"
-    );
-
-    window.location.href =
-        "order-confirmation.html";
-}
-
-
-// ==============================
-// ORDER CONFIRMATION
-// ==============================
-
-function displayOrderConfirmation() {
-
-    const orderConfirmation =
-        document.getElementById(
-            "orderConfirmation"
-        );
-
-    if (!orderConfirmation) {
-        return;
-    }
-
-    const order =
-        JSON.parse(
-            localStorage.getItem("lastOrder")
-        );
-
-    if (!order) {
-
-        orderConfirmation.innerHTML =
-            "<p>No recent order found.</p>";
-
-        return;
-    }
-
-    let productsHTML = "";
-
-    order.products.forEach(
-        function(product) {
-
-            const quantity =
-                product.quantity || 1;
-
-            const itemTotal =
-                Number(product.price) *
-                quantity;
-
-            productsHTML += `
-
-                <div class="product">
-
-                    ${
-                        product.image
-                        ?
-                        `<img
-                            src="${product.image}"
-                            alt="${product.name}"
-                        >`
-                        :
-                        ""
-                    }
-
-                    <h3>
-                        ${product.name}
-                    </h3>
+                    <h3>${item.name}</h3>
 
                     <p>
-                        Quantity:
-                        ${quantity}
+                        €${Number(item.price).toFixed(2)}
                     </p>
 
-                    <p>
-                        Item Total:
-                        $${itemTotal}
-                    </p>
-
-                </div>
-
-            `;
-        }
-    );
-
-    orderConfirmation.innerHTML = `
-
-        <div class="product">
-
-            <h2>
-                🎉 Order Confirmed!
-            </h2>
-
-            <p>
-                <strong>Name:</strong>
-                ${order.name}
-            </p>
-
-            <p>
-                <strong>Email:</strong>
-                ${order.email}
-            </p>
-
-            <p>
-                <strong>Date:</strong>
-                ${order.date}
-            </p>
-
-            <p>
-                <strong>Time:</strong>
-                ${order.time}
-            </p>
-
-            <p>
-                <strong>Status:</strong>
-                ${order.status}
-            </p>
-
-            <p>
-                <strong>Shipping:</strong>
-                ${order.shippingMethod}
-            </p>
-
-            <h3>
-                Total:
-                $${order.total}
-            </h3>
-
-        </div>
-
-        ${productsHTML}
-
-    `;
-}
-
-
-// ==============================
-// ORDER HISTORY
-// ==============================
-
-function displayOrderHistory() {
-
-    const orderHistory =
-        document.getElementById(
-            "orderHistory"
-        );
-
-    if (!orderHistory) {
-        return;
-    }
-
-    const orders =
-        JSON.parse(
-            localStorage.getItem("orders")
-        ) || [];
-
-    orderHistory.innerHTML = "";
-
-    if (orders.length === 0) {
-
-        orderHistory.innerHTML =
-            "<p>No orders yet.</p>";
-
-        return;
-    }
-
-    orders.forEach(
-        function(order, index) {
-
-            let productsHTML = "";
-
-            order.products.forEach(
-                function(product) {
-
-                    const quantity =
-                        product.quantity || 1;
-
-                    const itemTotal =
-                        Number(product.price) *
-                        quantity;
-
-                    productsHTML += `
-
-                        <div>
-
-                            <p>
-                                <strong>
-                                    ${product.name}
-                                </strong>
-                            </p>
-
-                            <p>
-                                Quantity:
-                                ${quantity}
-                            </p>
-
-                            <p>
-                                Item Total:
-                                $${itemTotal}
-                            </p>
-
-                        </div>
-
-                    `;
-                }
-            );
-
-            orderHistory.innerHTML += `
-
-                <div class="product">
-
-                    <h2>
-                        📦 Order #${index + 1}
-                    </h2>
-
-                    <p>
-                        Date:
-                        ${order.date}
-                    </p>
-
-                    <p>
-                        Time:
-                        ${order.time}
-                    </p>
-
-                    <p>
-                        Customer:
-                        ${order.name}
-                    </p>
-
-                    <p>
-                        Email:
-                        ${order.email}
-                    </p>
-
-                    <p>
-                        Shipping:
-                        ${order.shippingMethod}
-                    </p>
-
-                    <p>
-                        Total:
-                        $${order.total}
-                    </p>
-
-                    <label>
-                        Status:
-                    </label>
-
-                    <select
-                        onchange="
-                            updateOrderStatus(
-                                ${order.id},
-                                this.value
-                            )
-                        "
+                    <button
+                        onclick="changeCartQuantity(${item.id}, -1)"
                     >
+                        −
+                    </button>
 
-                        <option
-                            value="Order Placed"
-                            ${
-                                order.status ===
-                                "Order Placed"
-                                ?
-                                "selected"
-                                :
-                                ""
-                            }
-                        >
-                            Order Placed
-                        </option>
+                    <span>
+                        ${item.quantity}
+                    </span>
 
-                        <option
-                            value="Processing"
-                            ${
-                                order.status ===
-                                "Processing"
-                                ?
-                                "selected"
-                                :
-                                ""
-                            }
-                        >
-                            Processing
-                        </option>
+                    <button
+                        onclick="changeCartQuantity(${item.id}, 1)"
+                    >
+                        +
+                    </button>
 
-                        <option
-                            value="Shipped"
-                            ${
-                                order.status ===
-                                "Shipped"
-                                ?
-                                "selected"
-                                :
-                                ""
-                            }
-                        >
-                            Shipped
-                        </option>
-
-                        <option
-                            value="Delivered"
-                            ${
-                                order.status ===
-                                "Delivered"
-                                ?
-                                "selected"
-                                :
-                                ""
-                            }
-                        >
-                            Delivered
-                        </option>
-
-                    </select>
-
-                    <h3>
-                        Products
-                    </h3>
-
-                    ${productsHTML}
+                    <button
+                        onclick="removeFromCart(${item.id})"
+                    >
+                        🗑️ Remove
+                    </button>
 
                 </div>
 
-            `;
-        }
-    );
+            </div>
+        `;
+
+    }).join("");
 }
 
 
-// ==============================
-// UPDATE ORDER STATUS
-// ==============================
-
-function updateOrderStatus(
-    orderId,
-    newStatus
-) {
-
-    let orders =
-        JSON.parse(
-            localStorage.getItem("orders")
-        ) || [];
-
-    orders =
-        orders.map(
-            function(order) {
-
-                if (
-                    order.id === orderId
-                ) {
-
-                    order.status =
-                        newStatus;
-
-                }
-
-                return order;
-
-            }
-        );
-
-    localStorage.setItem(
-        "orders",
-        JSON.stringify(orders)
-    );
-
-    const lastOrder =
-        JSON.parse(
-            localStorage.getItem(
-                "lastOrder"
-            )
-        );
-
-    if (
-        lastOrder &&
-        lastOrder.id === orderId
-    ) {
-
-        lastOrder.status =
-            newStatus;
-
-        localStorage.setItem(
-            "lastOrder",
-            JSON.stringify(lastOrder)
-        );
-
-    }
-
-    displayOrderHistory();
-}
-
-
-// ==============================
+// ======================================================
 // FAVORITES
-// ==============================
+// ======================================================
 
-function addToFavorites(productId) {
-
-    let favorites =
-        JSON.parse(
-            localStorage.getItem(
-                "favorites"
-            )
-        ) || [];
-
-    const product =
-        products.find(
-            function(product) {
-
-                return product.id === productId;
-
-            }
-        );
-
-    if (!product) {
-        return;
-    }
-
-    const alreadyFavorite =
-        favorites.some(
-            function(favorite) {
-
-                return favorite.id === productId;
-
-            }
-        );
-
-    if (alreadyFavorite) {
-
-        alert(
-            "This product is already in your favorites."
-        );
-
-        return;
-    }
-
-    favorites.push(product);
+function saveFavorites() {
 
     localStorage.setItem(
         "favorites",
@@ -1650,843 +527,842 @@ function addToFavorites(productId) {
     );
 
     updateFavoritesCount();
-
-    alert(
-        product.name +
-        " added to favorites!"
-    );
 }
 
 
-// ==============================
-// FAVORITES COUNT
-// ==============================
+function toggleFavorite(productId) {
+
+    const id = String(productId);
+
+    if (favorites.includes(id)) {
+
+        favorites = favorites.filter(
+            item => item !== id
+        );
+
+    } else {
+
+        favorites.push(id);
+
+    }
+
+    saveFavorites();
+
+    displayProducts(allProducts);
+
+    displayProductDetails();
+}
+
+
+function addToFavorites(productId) {
+
+    const id = String(productId);
+
+    if (!favorites.includes(id)) {
+
+        favorites.push(id);
+
+        saveFavorites();
+
+        alert("Added to favorites ❤️");
+    }
+}
+
 
 function updateFavoritesCount() {
 
     const favoritesCount =
-        document.getElementById(
-            "favoritesCount"
-        );
+        document.getElementById("favoritesCount");
 
     if (!favoritesCount) {
         return;
     }
-
-    const favorites =
-        JSON.parse(
-            localStorage.getItem(
-                "favorites"
-            )
-        ) || [];
 
     favoritesCount.textContent =
         favorites.length;
 }
 
 
-// ==============================
-// DISPLAY FAVORITES
-// ==============================
-
 function displayFavorites() {
 
-    const favoriteItems =
-        document.getElementById(
-            "favoriteItems"
+    const container =
+        document.getElementById("favoritesList");
+
+    if (!container) {
+        return;
+    }
+
+    const favoriteProducts =
+        allProducts.filter(product =>
+            favorites.includes(String(product.id))
         );
 
-    if (!favoriteItems) {
-        return;
-    }
+    if (favoriteProducts.length === 0) {
 
-    const favorites =
-        JSON.parse(
-            localStorage.getItem(
-                "favorites"
-            )
-        ) || [];
-
-    favoriteItems.innerHTML = "";
-
-    if (favorites.length === 0) {
-
-        favoriteItems.innerHTML =
-            "<p>You have no favorite products yet.</p>";
+        container.innerHTML = `
+            <p>No favorite products yet.</p>
+        `;
 
         return;
     }
 
-    favorites.forEach(
-        function(product) {
+    container.innerHTML =
+        favoriteProducts.map(product => {
 
-            favoriteItems.innerHTML += `
+            return `
+                <div class="product-card">
 
-                <div class="product">
-
-                    ${
-                        product.image
-                        ?
-                        `<img
-                            src="${product.image}"
-                            alt="${product.name}"
-                        >`
-                        :
-                        ""
-                    }
-
-                    <h3>
-                        ${product.name}
-                    </h3>
-
-                    <p class="price">
-                        💰 $${product.price}
-                    </p>
-
-                    <p class="category">
-                        🏷️
-                        ${product.category || "Other"}
-                    </p>
-
-                    <p class="description">
-                        ${product.description}
-                    </p>
-
-                    <a
-                        href="posted-product.html?id=${product.id}"
+                    <img
+                        src="${product.image_url || "https://via.placeholder.com/300"}"
+                        alt="${product.name}"
                     >
-                        <button type="button">
-                            👀 View Product
-                        </button>
+
+                    <h3>${product.name}</h3>
+
+                    <p>
+                        €${Number(product.price).toFixed(2)}
+                    </p>
+
+                    <a href="product.html?id=${product.id}">
+                        👀 View Product
                     </a>
 
                     <button
-                        type="button"
-                        onclick="addToCart(${product.id})"
+                        onclick="toggleFavorite(${product.id})"
                     >
-                        🛒 Add to Cart
-                    </button>
-
-                    <button
-                        type="button"
-                        onclick="
-                            removeFromFavorites(
-                                ${product.id}
-                            )
-                        "
-                    >
-                        ❌ Remove from Favorites
+                        💔 Remove
                     </button>
 
                 </div>
-
             `;
-        }
-    );
+
+        }).join("");
 }
 
 
-// ==============================
-// REMOVE FAVORITE
-// ==============================
+// ======================================================
+// SIGN UP
+// ======================================================
 
-function removeFromFavorites(productId) {
+async function signupUser() {
 
-    let favorites =
-        JSON.parse(
-            localStorage.getItem(
-                "favorites"
-            )
-        ) || [];
+    const name =
+        document.getElementById("name")?.value.trim();
 
-    favorites =
-        favorites.filter(
-            function(product) {
+    const email =
+        document.getElementById("email")?.value.trim();
 
-                return product.id !== productId;
+    const password =
+        document.getElementById("password")?.value;
 
+    if (!name || !email || !password) {
+
+        alert("Please fill in all fields.");
+
+        return;
+    }
+
+    if (password.length < 6) {
+
+        alert("Password must be at least 6 characters.");
+
+        return;
+    }
+
+    const { data, error } =
+        await supabaseClient.auth.signUp({
+
+            email: email,
+
+            password: password,
+
+            options: {
+                data: {
+                    name: name
+                }
             }
-        );
 
-    localStorage.setItem(
-        "favorites",
-        JSON.stringify(favorites)
-    );
+        });
 
-    displayFavorites();
+    if (error) {
 
-    updateFavoritesCount();
-}
+        console.error(error);
 
-
-// ==============================
-// RATINGS
-// ==============================
-
-function rateProduct() {
-
-    const ratingInput =
-        document.getElementById(
-            "productRating"
-        );
-
-    if (!ratingInput) {
-        return;
-    }
-
-    const rating =
-        Number(
-            ratingInput.value
-        );
-
-    if (rating === 0) {
-
-        alert(
-            "Please choose a rating."
-        );
+        alert(error.message);
 
         return;
     }
 
-    const params =
-        new URLSearchParams(
-            window.location.search
-        );
+    if (data.user) {
 
-    const productId =
-        Number(
-            params.get("id")
-        );
+        const { error: profileError } =
+            await supabaseClient
+                .from("profiles")
+                .upsert({
+                    id: data.user.id,
+                    name: name,
+                    email: email
+                });
 
-    let ratings =
-        JSON.parse(
-            localStorage.getItem(
-                "ratings"
-            )
-        ) || {};
+        if (profileError) {
 
-    if (!ratings[productId]) {
-
-        ratings[productId] = [];
-
-    }
-
-    ratings[productId].push(
-        rating
-    );
-
-    localStorage.setItem(
-        "ratings",
-        JSON.stringify(ratings)
-    );
-
-    ratingInput.value = "";
-
-    displayRating(productId);
-
-    alert(
-        "Rating submitted!"
-    );
-}
-
-
-// ==============================
-// DISPLAY RATING
-// ==============================
-
-function displayRating(productId) {
-
-    const ratingResult =
-        document.getElementById(
-            "ratingResult"
-        );
-
-    if (!ratingResult) {
-        return;
-    }
-
-    const ratings =
-        JSON.parse(
-            localStorage.getItem(
-                "ratings"
-            )
-        ) || {};
-
-    const productRatings =
-        ratings[productId] || [];
-
-    if (
-        productRatings.length === 0
-    ) {
-
-        ratingResult.innerHTML =
-            "<p>No ratings yet.</p>";
-
-        return;
-    }
-
-    let total = 0;
-
-    productRatings.forEach(
-        function(rating) {
-
-            total += rating;
+            console.error(
+                "Profile creation error:",
+                profileError
+            );
 
         }
-    );
+    }
 
-    const average =
-        total /
-        productRatings.length;
+    alert("Account created successfully! 🎉");
 
-    ratingResult.innerHTML = `
-
-        <h3>
-            Average Rating:
-            ${average.toFixed(1)}
-            ⭐
-        </h3>
-
-        <p>
-            Number of ratings:
-            ${productRatings.length}
-        </p>
-
-    `;
+    window.location.href = "index.html";
 }
 
 
-// ==============================
-// CREATE ACCOUNT
-// ==============================
+// ======================================================
+// CREATE ACCOUNT ALIAS
+// ======================================================
 
 function createAccount() {
 
-    const nameInput =
-        document.getElementById(
-            "signupName"
-        );
-
-    const emailInput =
-        document.getElementById(
-            "signupEmail"
-        );
-
-    const passwordInput =
-        document.getElementById(
-            "signupPassword"
-        );
-
-    if (
-        !nameInput ||
-        !emailInput ||
-        !passwordInput
-    ) {
-        return;
-    }
-
-    const name =
-        nameInput.value.trim();
-
-    const email =
-        emailInput.value.trim();
-
-    const password =
-        passwordInput.value;
-
-    if (
-        name === "" ||
-        email === "" ||
-        password === ""
-    ) {
-
-        alert(
-            "Please fill in all account fields."
-        );
-
-        return;
-    }
-
-    const account = {
-
-        name: name,
-
-        email: email,
-
-        password: password
-
-    };
-
-    localStorage.setItem(
-        "account",
-        JSON.stringify(account)
-    );
-
-    alert(
-        "Account created successfully!"
-    );
-
-    nameInput.value = "";
-
-    emailInput.value = "";
-
-    passwordInput.value = "";
+    signupUser();
 }
 
 
-// ==============================
+// ======================================================
 // LOGIN
-// ==============================
+// ======================================================
 
-function loginUser() {
-
-    const emailInput =
-        document.getElementById(
-            "loginEmail"
-        );
-
-    const passwordInput =
-        document.getElementById(
-            "loginPassword"
-        );
-
-    if (
-        !emailInput ||
-        !passwordInput
-    ) {
-        return;
-    }
+async function loginUser() {
 
     const email =
-        emailInput.value.trim();
+        document.getElementById("loginEmail")?.value.trim();
 
     const password =
-        passwordInput.value;
+        document.getElementById("loginPassword")?.value;
 
-    const account =
-        JSON.parse(
-            localStorage.getItem(
-                "account"
-            )
-        );
+    if (!email || !password) {
 
-    if (!account) {
-
-        alert(
-            "No account found. Please create an account first."
-        );
+        alert("Please enter your email and password.");
 
         return;
     }
 
-    if (
-        email === account.email &&
-        password === account.password
-    ) {
+    const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
 
-        localStorage.setItem(
-            "loggedIn",
-            "true"
-        );
+            email: email,
 
-        alert(
-            "Login successful! Welcome, "
-            + account.name
-            + "!"
-        );
+            password: password
 
-        window.location.href =
-            "index.html";
+        });
 
-    } else {
+    if (error) {
 
-        alert(
-            "Incorrect email or password."
-        );
+        console.error(error);
 
+        alert(error.message);
+
+        return;
     }
+
+    alert("Login successful! 🎉");
+
+    window.location.href = "index.html";
 }
 
 
-// ==============================
+// ======================================================
+// LOGOUT
+// ======================================================
+
+async function logoutUser() {
+
+    const { error } =
+        await supabaseClient.auth.signOut();
+
+    if (error) {
+
+        console.error(error);
+
+        alert(error.message);
+
+        return;
+    }
+
+    window.location.href = "index.html";
+}
+
+
+// ======================================================
 // LOGIN STATUS
-// ==============================
+// ======================================================
 
-function updateLoginStatus() {
+async function updateLoginStatus() {
 
-    const loginLink =
-        document.querySelector(
+    const loginLinks =
+        document.querySelectorAll(
             'a[href="login.html"]'
         );
 
-    if (!loginLink) {
-        return;
-    }
+    const { data: { user } } =
+        await supabaseClient.auth.getUser();
 
-    const account =
-        JSON.parse(
-            localStorage.getItem(
-                "account"
-            )
-        );
+    loginLinks.forEach(link => {
 
-    const loggedIn =
-        localStorage.getItem(
-            "loggedIn"
-        );
+        if (user) {
 
-    if (
-        loggedIn === "true" &&
-        account
-    ) {
+            link.textContent = "👤 Profile";
 
-        loginLink.textContent =
-            "🚪 Logout";
+            link.href = "profile.html";
 
-        loginLink.href =
-            "#";
+        } else {
 
-        loginLink.onclick =
-            function(event) {
+            link.textContent = "👤 Login";
 
-                event.preventDefault();
+            link.href = "login.html";
 
-                logoutUser();
+        }
 
-            };
-
-    } else {
-
-        loginLink.textContent =
-            "👤 Login";
-
-        loginLink.href =
-            "login.html";
-
-        loginLink.onclick =
-            null;
-
-    }
+    });
 }
 
 
-// ==============================
-// LOGOUT
-// ==============================
-
-function logoutUser() {
-
-    localStorage.removeItem(
-        "loggedIn"
-    );
-
-    alert(
-        "You have been logged out."
-    );
-
-    updateLoginStatus();
-}
-
-
-// ==============================
+// ======================================================
 // PROFILE
-// ==============================
+// ======================================================
 
-function displayProfile() {
+async function displayProfile() {
 
-    const profileName =
-        document.getElementById(
-            "profileName"
-        );
+    const nameElement =
+        document.getElementById("profileName");
 
-    const profileEmail =
-        document.getElementById(
-            "profileEmail"
-        );
+    const emailElement =
+        document.getElementById("profileEmail");
 
-    const profileStatus =
-        document.getElementById(
-            "profileStatus"
-        );
+    const statusElement =
+        document.getElementById("profileStatus");
 
     if (
-        !profileName ||
-        !profileEmail ||
-        !profileStatus
+        !nameElement ||
+        !emailElement ||
+        !statusElement
     ) {
         return;
     }
 
-    const account =
-        JSON.parse(
-            localStorage.getItem(
-                "account"
-            )
-        );
+    const {
+        data: { user },
+        error: userError
+    } = await supabaseClient.auth.getUser();
 
-    const loggedIn =
-        localStorage.getItem(
-            "loggedIn"
-        );
+    if (userError || !user) {
 
-    if (
-        !account ||
-        loggedIn !== "true"
-    ) {
-
-        profileName.textContent =
-            "Not logged in";
-
-        profileEmail.textContent =
-            "Not available";
-
-        profileStatus.textContent =
-            "Not logged in";
+        nameElement.textContent = "Not logged in";
+        emailElement.textContent = "Not logged in";
+        statusElement.textContent = "Please log in";
 
         return;
     }
 
+    const { data: profile, error: profileError } =
+        await supabaseClient
+            .from("profiles")
+            .select("name, email")
+            .eq("id", user.id)
+            .single();
 
-    // Fill edit boxes
-    const editName =
-        document.getElementById(
-            "editName"
-        );
+    if (profileError) {
 
-    const editEmail =
-        document.getElementById(
-            "editEmail"
-        );
+        console.error(profileError);
 
-    if (editName) {
+        nameElement.textContent =
+            user.user_metadata?.name || "User";
 
-        editName.value =
-            account.name;
+        emailElement.textContent =
+            user.email || "";
 
+        statusElement.textContent =
+            "Logged in";
+
+        return;
     }
 
-    if (editEmail) {
+    nameElement.textContent =
+        profile.name || "User";
 
-        editEmail.value =
-            account.email;
+    emailElement.textContent =
+        profile.email || user.email || "";
 
-    }
-
-
-    // Display account information
-    profileName.textContent =
-        account.name;
-
-    profileEmail.textContent =
-        account.email;
-
-    profileStatus.textContent =
-        "Logged in ✅";
+    statusElement.textContent =
+        "Logged in";
 }
 
 
-// ==============================
+// ======================================================
 // UPDATE PROFILE
-// ==============================
+// ======================================================
 
-function updateProfile() {
-
-    const editName =
-        document.getElementById(
-            "editName"
-        );
-
-    const editEmail =
-        document.getElementById(
-            "editEmail"
-        );
-
-    const editPassword =
-        document.getElementById(
-            "editPassword"
-        );
-
-    if (
-        !editName ||
-        !editEmail ||
-        !editPassword
-    ) {
-        return;
-    }
+async function updateProfile() {
 
     const name =
-        editName.value.trim();
+        document.getElementById("editName")?.value.trim();
 
     const email =
-        editEmail.value.trim();
+        document.getElementById("editEmail")?.value.trim();
 
     const password =
-        editPassword.value;
+        document.getElementById("editPassword")?.value;
 
-    if (
-        name === "" ||
-        email === ""
-    ) {
+    if (!name || !email) {
 
-        alert(
-            "Please enter your name and email."
-        );
+        alert("Please enter your name and email.");
 
         return;
     }
 
-    const account =
-        JSON.parse(
-            localStorage.getItem(
-                "account"
-            )
-        );
+    const {
+        data: { user },
+        error: userError
+    } = await supabaseClient.auth.getUser();
 
-    if (!account) {
+    if (userError || !user) {
 
-        alert(
-            "No account found."
-        );
+        alert("Please log in first.");
 
         return;
     }
 
-    account.name =
-        name;
+    const { error: profileError } =
+        await supabaseClient
+            .from("profiles")
+            .update({
+                name: name,
+                email: email
+            })
+            .eq("id", user.id);
 
-    account.email =
-        email;
+    if (profileError) {
 
-    if (password !== "") {
+        console.error(profileError);
 
-        account.password =
-            password;
+        alert("Could not update your profile.");
 
+        return;
+    }
+
+    if (email !== user.email) {
+
+        const { error: emailError } =
+            await supabaseClient.auth.updateUser({
+                email: email
+            });
+
+        if (emailError) {
+
+            console.error(emailError);
+
+            alert(emailError.message);
+
+            return;
+        }
+    }
+
+    if (password) {
+
+        if (password.length < 6) {
+
+            alert(
+                "New password must be at least 6 characters."
+            );
+
+            return;
+        }
+
+        const { error: passwordError } =
+            await supabaseClient.auth.updateUser({
+                password: password
+            });
+
+        if (passwordError) {
+
+            console.error(passwordError);
+
+            alert(passwordError.message);
+
+            return;
+        }
+    }
+
+    document.getElementById("editPassword").value = "";
+
+    alert("Profile updated successfully! 🎉");
+
+    await displayProfile();
+}
+
+
+// ======================================================
+// ORDERS
+// ======================================================
+
+async function placeOrder() {
+
+    const {
+        data: { user }
+    } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+
+        alert("Please log in before placing an order.");
+
+        window.location.href = "login.html";
+
+        return;
+    }
+
+    if (cart.length === 0) {
+
+        alert("Your cart is empty.");
+
+        return;
+    }
+
+    const customerName =
+        document.getElementById("customerName")?.value.trim();
+
+    const customerEmail =
+        document.getElementById("customerEmail")?.value.trim();
+
+    const shippingElement =
+        document.getElementById("shipping");
+
+    const shipping =
+        shippingElement
+            ? Number(shippingElement.value)
+            : 0;
+
+    if (!customerName || !customerEmail) {
+
+        alert("Please enter your customer information.");
+
+        return;
+    }
+
+    const subtotal =
+        cart.reduce(
+            (total, item) =>
+                total +
+                Number(item.price) *
+                Number(item.quantity),
+            0
+        );
+
+    const total =
+        subtotal + shipping;
+
+    const { data: order, error } =
+        await supabaseClient
+            .from("orders")
+            .insert({
+                user_id: user.id,
+                customer_name: customerName,
+                customer_email: customerEmail,
+                items: cart,
+                shipping: shipping,
+                total: total
+            })
+            .select()
+            .single();
+
+    if (error) {
+
+        console.error(error);
+
+        alert("Could not place order.");
+
+        return;
     }
 
     localStorage.setItem(
-        "account",
-        JSON.stringify(account)
+        "lastOrder",
+        JSON.stringify(order)
     );
 
-    alert(
-        "Profile updated successfully! ✅"
-    );
+    cart = [];
 
-    displayProfile();
-
-    editPassword.value = "";
-}
-
-
-// ==============================
-// DELETE ACCOUNT
-// ==============================
-
-function deleteAccount() {
-
-    const account =
-        JSON.parse(
-            localStorage.getItem(
-                "account"
-            )
-        );
-
-    if (!account) {
-
-        alert(
-            "No account found."
-        );
-
-        return;
-    }
-
-    const confirmed =
-        confirm(
-            "Are you sure you want to delete your account?"
-        );
-
-    if (!confirmed) {
-        return;
-    }
-
-    localStorage.removeItem(
-        "account"
-    );
-
-    localStorage.removeItem(
-        "loggedIn"
-    );
-
-    alert(
-        "Your account has been deleted."
-    );
+    saveCart();
 
     window.location.href =
-        "index.html";
+        "order-confirmation.html";
 }
 
 
-// ==============================
-// POST BUTTON
-// ==============================
+// ======================================================
+// ORDER HISTORY
+// ======================================================
 
-const postButton =
-    document.getElementById(
-        "postButton"
-    );
+async function displayOrderHistory() {
 
-if (postButton) {
+    const container =
+        document.getElementById("orderHistory");
 
-    postButton.addEventListener(
-        "click",
-        postItem
-    );
+    if (!container) {
+        return;
+    }
 
+    const {
+        data: { user }
+    } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+
+        container.innerHTML = `
+            <p>Please log in to view your orders.</p>
+        `;
+
+        return;
+    }
+
+    const { data: orders, error } =
+        await supabaseClient
+            .from("orders")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", {
+                ascending: false
+            });
+
+    if (error) {
+
+        console.error(error);
+
+        container.innerHTML = `
+            <p>Could not load your orders.</p>
+        `;
+
+        return;
+    }
+
+    if (!orders || orders.length === 0) {
+
+        container.innerHTML = `
+            <p>You have no orders yet.</p>
+        `;
+
+        return;
+    }
+
+    container.innerHTML = orders.map(order => {
+
+        const items =
+            Array.isArray(order.items)
+                ? order.items
+                : [];
+
+        return `
+            <div class="order-card">
+
+                <h3>
+                    Order #${order.id}
+                </h3>
+
+                <p>
+                    ${new Date(order.created_at).toLocaleString()}
+                </p>
+
+                <p>
+                    <strong>Total:</strong>
+                    €${Number(order.total).toFixed(2)}
+                </p>
+
+                <div>
+
+                    ${items.map(item => `
+                        <p>
+                            ${item.name}
+                            × ${item.quantity}
+                        </p>
+                    `).join("")}
+
+                </div>
+
+            </div>
+        `;
+
+    }).join("");
 }
 
 
-// ==============================
-// STARTUP
-// ==============================
+// ======================================================
+// PRODUCT IMAGE UPLOAD + POST PRODUCT
+// ======================================================
 
-displayProducts(products);
+async function postItem(event) {
 
-displayProductDetails();
+    // Stop the form from refreshing the page
+    if (event) {
+        event.preventDefault();
+    }
 
-displayCart();
+    const name =
+        document.getElementById("productName").value.trim();
 
-displayCheckout();
+    const price =
+        Number(document.getElementById("productPrice").value);
 
-displayOrderHistory();
+    const category =
+        document.getElementById("productCategory").value;
 
-displayFavorites();
+    const description =
+        document.getElementById("productDescription").value.trim();
 
-displayOrderConfirmation();
+    const imageInput =
+        document.getElementById("productImage");
 
-displayProfile();
+    if (!name || !price || !category) {
+        alert("Please enter the product name, price and category.");
+        return;
+    }
 
-updateCartCount();
+    // Make sure the user is logged in
+    const {
+        data: { user },
+        error: userError
+    } = await supabaseClient.auth.getUser();
 
-updateFavoritesCount();
+    if (userError || !user) {
+        alert("Please log in before posting a product.");
+        window.location.href = "login.html";
+        return;
+    }
 
-updateLoginStatus();
+    let imageUrl = null;
 
+    // ==================================================
+    // UPLOAD IMAGE
+    // ==================================================
 
-const ratingParams =
-    new URLSearchParams(
-        window.location.search
+    if (imageInput && imageInput.files.length > 0) {
+
+        const file = imageInput.files[0];
+
+        const fileExtension =
+            file.name.split(".").pop().toLowerCase();
+
+        const fileName =
+            `${user.id}-${Date.now()}.${fileExtension}`;
+
+        console.log("Uploading image:", fileName);
+
+        const {
+            error: uploadError
+        } = await supabaseClient.storage
+            .from("product-images")
+            .upload(fileName, file);
+
+        if (uploadError) {
+
+            console.error(
+                "Image upload failed:",
+                uploadError
+            );
+
+            // Don't stop the product from being posted
+            console.log(
+                "Continuing without product image."
+            );
+
+        } else {
+
+            const {
+                data: publicUrlData
+            } = supabaseClient.storage
+                .from("product-images")
+                .getPublicUrl(fileName);
+
+            imageUrl =
+                publicUrlData.publicUrl;
+
+            console.log(
+                "Image uploaded:",
+                imageUrl
+            );
+        }
+    }
+
+    // ==================================================
+    // SAVE PRODUCT TO SUPABASE
+    // ==================================================
+
+    console.log("Saving product to Supabase...");
+
+    const {
+        data: product,
+        error: productError
+    } = await supabaseClient
+        .from("products")
+        .insert({
+            name: name,
+            price: price,
+            description: description,
+            category: category,
+            image_url: imageUrl
+        })
+        .select()
+        .single();
+
+    if (productError) {
+
+        console.error(
+            "Product insert failed:",
+            productError
+        );
+
+        alert(
+            "The product could not be saved. Check the browser console."
+        );
+
+        return;
+    }
+
+    console.log(
+        "Product successfully saved:",
+        product
     );
 
-const ratingProductId =
-    Number(
-        ratingParams.get("id")
-    );
+    alert("Product posted successfully! 🎉");
 
-if (ratingProductId) {
-
-    displayRating(
-        ratingProductId
-    );
-
+    // Go back to marketplace
+    window.location.href = "index.html";
 }
+
+// ======================================================
+// INITIALIZE WEBSITE
+// ======================================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    async function () {
+
+        await loadProducts();
+
+        await displayProductDetails();
+
+        await displayProfile();
+
+        await displayOrderHistory();
+
+        displayCart();
+
+        displayFavorites();
+
+        updateCartCount();
+
+        updateFavoritesCount();
+
+        await updateLoginStatus();
+
+    }
+);
